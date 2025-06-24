@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     paddingTop: 48,
-    paddingHorizontal: 16,
+    paddingHorizontal: 24,
   },
   background: {
     position: "absolute",
@@ -108,6 +108,7 @@ const styles = StyleSheet.create({
   inputWrapper: {
     width: "100%",
     marginBottom: 16,
+
     borderRadius: 12,
     backgroundColor: "#fff",
     shadowColor: "#000",
@@ -118,7 +119,7 @@ const styles = StyleSheet.create({
   input: {
     width: "100%",
     paddingVertical: 20,
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     fontSize: 16,
     color: "#222",
     backgroundColor: "#fff",
@@ -131,8 +132,8 @@ const styles = StyleSheet.create({
     width: "100%",
     backgroundColor: "#F87171",
     borderRadius: 10,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
+    paddingVertical: 20,
+    paddingHorizontal: 20,
     marginTop: 8,
     marginBottom: 18,
     shadowColor: "#000",
@@ -152,8 +153,8 @@ const styles = StyleSheet.create({
     width: "100%",
     backgroundColor: "#fff",
     borderRadius: 10,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
+    paddingVertical: 20,
+    paddingHorizontal: 20,
     marginBottom: 8,
     shadowColor: "#000",
     shadowOpacity: 0.04,
