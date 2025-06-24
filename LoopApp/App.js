@@ -9,12 +9,15 @@ import {
   StyleSheet,
   Dimensions,
 } from "react-native";
+import { useNavigation } from "@react-navigation/native";
 import AddButton from "./components/AddButton";
 import AddModal from "./components/AddModal";
 import LandingPage from "./screens/LandingPage";
 import LoginPage from "./screens/LoginPage";
 import SignUpPage from "./screens/SignUpPage";
 import HomeScreen from "./screens/HomeScreen";
+import AddHabitScreen from "./screens/AddHabitScreen";
+import ProfileScreen from "./screens/ProfileScreen";
 
 // Import other screens as you create them
 
@@ -25,6 +28,7 @@ function MainTabs() {
   const [isModalVisible, setModalVisible] = useState(false);
   const showModal = () => setModalVisible(true);
   const hideModal = () => setModalVisible(false);
+  const navigation = useNavigation();
 
   return (
     <>
@@ -86,7 +90,6 @@ function MainTabs() {
                 {...props}
                 onPress={() => {
                   showModal();
-                  console.log(isModalVisible);
                 }}
               />
             ),
@@ -95,7 +98,7 @@ function MainTabs() {
 
         <Tab.Screen
           name="Profile"
-          component={HomeScreen} // Cambia por tu componente Profile
+          component={ProfileScreen} // Cambia por tu componente Profile
           options={{
             tabBarLabel: "Profile",
             tabBarIcon: ({ color, size }) => (
@@ -104,7 +107,11 @@ function MainTabs() {
           }}
         />
       </Tab.Navigator>
-      <AddModal visible={isModalVisible} onClose={hideModal} />
+      <AddModal
+        visible={isModalVisible}
+        onClose={hideModal}
+        navigation={navigation}
+      />
     </>
   );
 }
@@ -120,6 +127,7 @@ export default function App() {
         <Stack.Screen name="Login" component={LoginPage} />
         <Stack.Screen name="SignUp" component={SignUpPage} />
         <Stack.Screen name="MainTabs" component={MainTabs} />
+        <Stack.Screen name="AddHabitScreen" component={AddHabitScreen} />
 
         {/* Add more screens here */}
       </Stack.Navigator>

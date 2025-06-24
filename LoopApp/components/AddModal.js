@@ -15,7 +15,7 @@ import nutricion from "../assets/FrameGreen.png";
 
 const { width } = Dimensions.get("window");
 
-export default function AddModal({ visible, onClose }) {
+export default function AddModal({ visible, onClose, navigation }) {
   return (
     <Modal
       animationType="slide"
@@ -34,7 +34,21 @@ export default function AddModal({ visible, onClose }) {
           {/* Habit Options */}
           <View style={styles.optionsContainer}>
             {/* Higiene */}
-            <TouchableOpacity style={[styles.optionBox, styles.higieneBox]}>
+            <TouchableOpacity
+              style={[styles.optionBox, styles.higieneBox]}
+              onPress={() => {
+                if (typeof navigation !== "undefined" && navigation) {
+                  onClose && onClose();
+                  setTimeout(() => {
+                    navigation.navigate("AddHabitScreen", { type: "higiene" });
+                  }, 300);
+                } else {
+                  console.warn(
+                    "navigation prop is required to navigate to AddHabitScreen"
+                  );
+                }
+              }}
+            >
               <View style={styles.optionContent}>
                 <Text style={styles.optionText}>Higiene</Text>
                 <Text style={styles.optionEmoji}>💧</Text>
@@ -46,7 +60,22 @@ export default function AddModal({ visible, onClose }) {
               />
             </TouchableOpacity>
             {/* Salud */}
-            <TouchableOpacity style={[styles.optionBox, styles.saludBox]}>
+
+            <TouchableOpacity
+              style={[styles.optionBox, styles.saludBox]}
+              onPress={() => {
+                if (typeof navigation !== "undefined" && navigation) {
+                  onClose && onClose();
+                  setTimeout(() => {
+                    navigation.navigate("AddHabitScreen", { type: "salud" });
+                  }, 300);
+                } else {
+                  console.warn(
+                    "navigation prop is required to navigate to AddHabitScreen"
+                  );
+                }
+              }}
+            >
               <View style={styles.optionContent}>
                 <Text style={styles.optionText}>Salud</Text>
                 <Text style={styles.optionEmoji}>💊</Text>
@@ -58,7 +87,23 @@ export default function AddModal({ visible, onClose }) {
               />
             </TouchableOpacity>
             {/* Nutrición */}
-            <TouchableOpacity style={[styles.optionBox, styles.nutricionBox]}>
+            <TouchableOpacity
+              style={[styles.optionBox, styles.nutricionBox]}
+              onPress={() => {
+                if (typeof navigation !== "undefined" && navigation) {
+                  onClose && onClose();
+                  setTimeout(() => {
+                    navigation.navigate("AddHabitScreen", {
+                      type: "nutricion",
+                    });
+                  }, 300);
+                } else {
+                  console.warn(
+                    "navigation prop is required to navigate to AddHabitScreen"
+                  );
+                }
+              }}
+            >
               <View style={styles.optionContent}>
                 <Text style={styles.optionText}>Nutrición</Text>
                 <Text style={styles.optionEmoji}>🍴</Text>
