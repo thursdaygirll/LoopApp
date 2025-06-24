@@ -4,11 +4,6 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Image,
-  ImageBackground,
-  TextInput,
-  KeyboardAvoidingView,
-  Platform,
   FlatList,
   ScrollView,
 } from "react-native";
@@ -62,12 +57,95 @@ export default function HomeScreen({ navigation }) {
 
   return (
     <View style={{ flex: 1, backgroundColor: "#87CEEB" }}>
-      <Text style={styles.title}>Loop</Text>
+      <Text style={styles.screenTitle}>Loop</Text>
       <View style={styles.header}>
         <Text style={styles.greeting}>Hi, Susana!</Text>
         <Text style={styles.month}>May</Text>
-        {/* AQUI FALTA EL CALENDARIO */}
+        {/* CALENDARIO SOLO */}
+        <View style={styles.calendar}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingHorizontal: 20 }}
+          >
+            {[
+              { day: "Sun", date: 10 },
+              { day: "Mon", date: 11, selected: true },
+              { day: "Tue", date: 12 },
+              { day: "Wed", date: 13 },
+              { day: "Thu", date: 14 },
+              { day: "Fri", date: 15 },
+              { day: "Sat", date: 16 },
+            ].map((item, idx) => (
+              <View
+                key={item.day}
+                style={{
+                  alignItems: "center",
+                  borderRadius: 12,
+
+                  backgroundColor: item.selected ? "#6EC6F5" : "#E6F0FA",
+                  marginRight: idx !== 6 ? 10 : 0,
+                }}
+              >
+                <View
+                  style={{
+                    borderRadius: 16,
+                    paddingHorizontal: 12,
+                    paddingVertical: 6,
+                    minWidth: 48,
+
+                    alignItems: "center",
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: item.selected ? "#fff" : "#3A7CA5",
+                      fontWeight: item.selected ? "bold" : "500",
+                      fontSize: 12,
+                      textDecorationLine: item.selected
+                        ? "none"
+                        : idx === 0
+                        ? "underline"
+                        : "none",
+                    }}
+                  >
+                    {item.day}
+                  </Text>
+                </View>
+                <View
+                  style={{
+                    marginTop: 6,
+                    backgroundColor: "#fff",
+                    borderRadius: 20,
+                    width: 30,
+                    height: 30,
+                    justifyContent: "center",
+                    alignItems: "center",
+                    borderWidth: item.selected ? 2 : 0,
+                    borderColor: item.selected ? "#6EC6F5" : "transparent",
+                    shadowColor: "#000",
+                    shadowOpacity: 0.05,
+                    shadowRadius: 2,
+                    elevation: 2,
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: "#3A7CA5",
+                      fontWeight: "bold",
+                      fontSize: 14,
+                    }}
+                  >
+                    {item.date}
+                  </Text>
+                </View>
+              </View>
+            ))}
+          </ScrollView>
+        </View>
+        {/* FIN CALENDARIO */}
       </View>
+      {/* CONTENEDOR DE ABAJO RESTAURADO */}
       <View style={styles.container}>
         <View style={styles.containerButtons}>
           <TouchableOpacity style={styles.button}>
@@ -100,7 +178,7 @@ function Item({ item, onToggleDone }) {
     <View style={[styles.item, { backgroundColor: item.color }]}>
       <Text style={styles.icon}>{item.icon}</Text>
       <View style={styles.itemContent}>
-        <Text style={styles.title}>{item.title}</Text>
+        <Text style={styles.itemTitle}>{item.title}</Text>
         <Text style={styles.hour}>{item.hour}</Text>
       </View>
       <View style={styles.done}>
@@ -135,7 +213,8 @@ function Item({ item, onToggleDone }) {
 }
 
 const styles = StyleSheet.create({
-  title: {
+  // Title for the screen (Loop)
+  screenTitle: {
     fontSize: 24,
     fontWeight: "bold",
     color: "#fff",
@@ -147,22 +226,29 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "column",
     gap: 10,
-    alignItems: "start",
-    paddingHorizontal: 25,
+    alignItems: "flex-start",
+    paddingHorizontal: 0,
     paddingTop: 10,
     marginTop: 30,
   },
   greeting: {
-    fontSize: 24,
+    fontSize: 16,
     fontWeight: "bold",
+    paddingLeft: 20,
     color: "#fff",
     fontFamily: "Poppins",
   },
   month: {
-    fontSize: 24,
+    fontSize: 16,
     fontWeight: "bold",
+    paddingLeft: 20,
     color: "#fff",
     fontFamily: "Poppins",
+  },
+
+  calendar: {
+    height: 80,
+    marginTop: 10,
   },
 
   container: {
@@ -193,6 +279,13 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
 
+  buttonText: {
+    fontSize: 14,
+    fontFamily: "Poppins",
+    color: "#000",
+    fontWeight: "500",
+  },
+
   list: {
     marginTop: 20,
     marginHorizontal: 10,
@@ -205,7 +298,6 @@ const styles = StyleSheet.create({
   item: {
     flexDirection: "row",
     alignItems: "center",
-
     padding: 20,
     borderRadius: 15,
   },
@@ -221,15 +313,18 @@ const styles = StyleSheet.create({
     fontSize: 24,
   },
 
-  title: {
+  // Style for the item title (task title)
+  itemTitle: {
     fontSize: 16,
     fontFamily: "Poppins",
-    fontWeight: "semibold",
+    fontWeight: "600",
+    color: "#222",
+    marginBottom: 2,
   },
 
   hour: {
     fontSize: 12,
-
     fontFamily: "Poppins",
+    color: "#666",
   },
 });
