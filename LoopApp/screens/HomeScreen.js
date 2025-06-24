@@ -43,8 +43,49 @@ const list = [
   },
 ];
 
+const isSameDay = (date1, date2) => {
+  return (
+    date1.getFullYear() === date2.getFullYear() &&
+    date1.getMonth() === date2.getMonth() &&
+    date1.getDate() === date2.getDate()
+  );
+};
+
+const getDaysInMonth = (year, month) => {
+  const days = [];
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0);
+
+  for (let day = 1; day <= lastDay.getDate(); day++) {
+    const date = new Date(year, month, day);
+    days.push({
+      day: date.toLocaleDateString("en-US", { weekday: "short" }),
+      date: day,
+      fullDate: date,
+    });
+  }
+  return days;
+};
+
+const getMonthsInYear = (year) => {
+  const months = [];
+  for (let month = 0; month < 12; month++) {
+    const date = new Date(year, month, 1);
+    months.push({
+      month: month,
+      name: date.toLocaleDateString("en-US", { month: "long" }),
+      shortName: date.toLocaleDateString("en-US", { month: "short" }),
+      fullDate: date,
+    });
+  }
+  return months;
+};
+
 export default function HomeScreen({ navigation }) {
   const [listState, setListState] = useState(list);
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [showMonthSelector, setShowMonthSelector] = useState(false);
+  const [filter, setFilter] = useState("All"); // Nuevo estado para el filtro
 
   // Cambia el estado de done para el item con el id dado
   const toggleDone = (id) => {
@@ -55,92 +96,168 @@ export default function HomeScreen({ navigation }) {
     );
   };
 
+  // Función para filtrar la lista según el filtro seleccionado
+  const getFilteredList = () => {
+    switch (filter) {
+      case "Done":
+        return listState.filter((item) => item.done === true);
+      case "Pending":
+        return listState.filter((item) => item.done === false);
+      default:
+        return listState;
+    }
+  };
+
+  const currentYear = selectedDate.getFullYear();
+  const currentMonth = selectedDate.getMonth();
+  const monthDays = getDaysInMonth(currentYear, currentMonth);
+  const yearMonths = getMonthsInYear(currentYear);
+  const monthName = selectedDate.toLocaleString("default", { month: "long" });
+
+  const selectMonth = (month) => {
+    const newDate = new Date(currentYear, month, 1);
+    setSelectedDate(newDate);
+    setShowMonthSelector(false);
+  };
+
+  const selectDay = (fullDate) => {
+    setSelectedDate(fullDate);
+  };
+
   return (
     <View style={{ flex: 1, backgroundColor: "#87CEEB" }}>
       <Text style={styles.screenTitle}>Loop</Text>
       <View style={styles.header}>
         <Text style={styles.greeting}>Hi, Susana!</Text>
-        <Text style={styles.month}>May</Text>
-        {/* CALENDARIO SOLO */}
+        <TouchableOpacity
+          onPress={() => setShowMonthSelector(!showMonthSelector)}
+        >
+          <Text style={styles.month}>{monthName} ▼</Text>
+        </TouchableOpacity>
+
+        {/* SELECTOR DE MES */}
+        {showMonthSelector && (
+          <View style={styles.monthSelector}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingHorizontal: 20 }}
+            >
+              {yearMonths.map((monthItem, idx) => {
+                const isSelected = monthItem.month === currentMonth;
+                return (
+                  <TouchableOpacity
+                    key={monthItem.month}
+                    onPress={() => selectMonth(monthItem.month)}
+                  >
+                    <View
+                      style={{
+                        borderRadius: 12,
+                        backgroundColor: isSelected ? "#6EC6F5" : "#E6F0FA",
+                        marginRight: idx !== 11 ? 10 : 0,
+                        paddingHorizontal: 16,
+                        paddingVertical: 8,
+                        alignItems: "center",
+                      }}
+                    >
+                      <Text
+                        style={{
+                          color: isSelected ? "#fff" : "#3A7CA5",
+                          fontWeight: isSelected ? "bold" : "500",
+                          fontSize: 14,
+                        }}
+                      >
+                        {monthItem.shortName}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </View>
+        )}
+
+        {/* CALENDARIO CON TODOS LOS DÍAS DEL MES */}
         <View style={styles.calendar}>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={{ paddingHorizontal: 20 }}
           >
-            {[
-              { day: "Sun", date: 10 },
-              { day: "Mon", date: 11, selected: true },
-              { day: "Tue", date: 12 },
-              { day: "Wed", date: 13 },
-              { day: "Thu", date: 14 },
-              { day: "Fri", date: 15 },
-              { day: "Sat", date: 16 },
-            ].map((item, idx) => (
-              <View
-                key={item.day}
-                style={{
-                  alignItems: "center",
-                  borderRadius: 12,
-
-                  backgroundColor: item.selected ? "#6EC6F5" : "#E6F0FA",
-                  marginRight: idx !== 6 ? 10 : 0,
-                }}
-              >
-                <View
-                  style={{
-                    borderRadius: 16,
-                    paddingHorizontal: 12,
-                    paddingVertical: 6,
-                    minWidth: 48,
-
-                    alignItems: "center",
-                  }}
+            {monthDays.map((item, idx) => {
+              const isSelected = isSameDay(item.fullDate, selectedDate);
+              const isToday = isSameDay(item.fullDate, new Date());
+              return (
+                <TouchableOpacity
+                  key={item.date}
+                  onPress={() => selectDay(item.fullDate)}
                 >
-                  <Text
+                  <View
                     style={{
-                      color: item.selected ? "#fff" : "#3A7CA5",
-                      fontWeight: item.selected ? "bold" : "500",
-                      fontSize: 12,
-                      textDecorationLine: item.selected
-                        ? "none"
-                        : idx === 0
-                        ? "underline"
-                        : "none",
+                      flexDirection: "column",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      borderRadius: 12,
+                      backgroundColor: isSelected
+                        ? "#6EC6F5"
+                        : isToday
+                        ? "#F5DEB3"
+                        : "#E6F0FA",
+
+                      marginRight: idx !== monthDays.length - 1 ? 10 : 0,
+                      paddingVertical: 6,
                     }}
                   >
-                    {item.day}
-                  </Text>
-                </View>
-                <View
-                  style={{
-                    marginTop: 6,
-                    backgroundColor: "#fff",
-                    borderRadius: 20,
-                    width: 30,
-                    height: 30,
-                    justifyContent: "center",
-                    alignItems: "center",
-                    borderWidth: item.selected ? 2 : 0,
-                    borderColor: item.selected ? "#6EC6F5" : "transparent",
-                    shadowColor: "#000",
-                    shadowOpacity: 0.05,
-                    shadowRadius: 2,
-                    elevation: 2,
-                  }}
-                >
-                  <Text
-                    style={{
-                      color: "#3A7CA5",
-                      fontWeight: "bold",
-                      fontSize: 14,
-                    }}
-                  >
-                    {item.date}
-                  </Text>
-                </View>
-              </View>
-            ))}
+                    <View
+                      style={{
+                        borderRadius: 16,
+                        paddingHorizontal: 12,
+                        paddingVertical: 6,
+                        minWidth: 48,
+                        alignItems: "center",
+                      }}
+                    >
+                      <Text
+                        style={{
+                          color: isSelected ? "#fff" : "#3A7CA5",
+                          fontWeight: isSelected ? "bold" : "500",
+                          fontSize: 12,
+                        }}
+                      >
+                        {item.day}
+                      </Text>
+                    </View>
+                    <View
+                      style={{
+                        marginTop: 6,
+                        backgroundColor: "#fff",
+                        borderRadius: 20,
+                        width: 30,
+                        height: 30,
+                        justifyContent: "center",
+                        alignItems: "center",
+                        borderWidth: isSelected ? 2 : 0,
+                        borderColor: isSelected ? "#6EC6F5" : "transparent",
+                        shadowColor: "#000",
+                        shadowOpacity: 0.05,
+                        shadowRadius: 2,
+                        elevation: 2,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          color: "#3A7CA5",
+                          fontWeight: "bold",
+                          fontSize: 14,
+                        }}
+                      >
+                        {item.date}
+                      </Text>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
           </ScrollView>
         </View>
         {/* FIN CALENDARIO */}
@@ -148,21 +265,51 @@ export default function HomeScreen({ navigation }) {
       {/* CONTENEDOR DE ABAJO RESTAURADO */}
       <View style={styles.container}>
         <View style={styles.containerButtons}>
-          <TouchableOpacity style={styles.button}>
-            <Text style={styles.buttonText}>All</Text>
+          <TouchableOpacity
+            style={[styles.button, filter === "All" && styles.activeButton]}
+            onPress={() => setFilter("All")}
+          >
+            <Text
+              style={[
+                styles.buttonText,
+                filter === "All" && styles.activeButtonText,
+              ]}
+            >
+              All
+            </Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.button}>
-            <Text style={styles.buttonText}>Done</Text>
+          <TouchableOpacity
+            style={[styles.button, filter === "Done" && styles.activeButton]}
+            onPress={() => setFilter("Done")}
+          >
+            <Text
+              style={[
+                styles.buttonText,
+                filter === "Done" && styles.activeButtonText,
+              ]}
+            >
+              Done
+            </Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.button}>
-            <Text style={styles.buttonText}>Pending</Text>
+          <TouchableOpacity
+            style={[styles.button, filter === "Pending" && styles.activeButton]}
+            onPress={() => setFilter("Pending")}
+          >
+            <Text
+              style={[
+                styles.buttonText,
+                filter === "Pending" && styles.activeButtonText,
+              ]}
+            >
+              Pending
+            </Text>
           </TouchableOpacity>
         </View>
 
         <FlatList
           style={styles.list}
           contentContainerStyle={styles.listContent}
-          data={listState}
+          data={getFilteredList()}
           renderItem={({ item }) => (
             <Item item={item} onToggleDone={() => toggleDone(item.id)} />
           )}
@@ -246,6 +393,10 @@ const styles = StyleSheet.create({
     fontFamily: "Poppins",
   },
 
+  monthSelector: {
+    height: 40,
+  },
+
   calendar: {
     height: 80,
     marginTop: 10,
@@ -279,11 +430,22 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
 
+  activeButton: {
+    backgroundColor: "#87CEEB",
+    borderColor: "#87CEEB",
+    opacity: 1,
+  },
+
   buttonText: {
     fontSize: 14,
     fontFamily: "Poppins",
     color: "#000",
     fontWeight: "500",
+  },
+
+  activeButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
   },
 
   list: {
