@@ -11,6 +11,8 @@ import {
   Modal,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { db } from "../firebase";
+import { collection, addDoc } from "firebase/firestore";
 
 // Puedes cambiar estos datos para hacerlo dinámico según la categoría seleccionada
 const habitTypes = {
@@ -72,8 +74,19 @@ export default function AddHabitScreen({ route, navigation }) {
     if (selectedDate) setTime(selectedDate);
   };
 
-  const handleAdd = () => {
-    navigation.goBack();
+  const handleAdd = async () => {
+    try {
+      await addDoc(collection(db, "habits"), {
+        name,
+        description,
+        type: habitType,
+        createdAt: new Date(),
+      });
+      console.log("Habit added successfully");
+    } catch (error) {
+      console.error("Error adding habit: ", error);
+      // Aquí podrías mostrar un mensaje de error al usuario
+    }
   };
 
   const handleDelete = () => {
