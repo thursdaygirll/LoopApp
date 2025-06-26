@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,40 +8,15 @@ import {
   ScrollView,
 } from "react-native";
 
-const list = [
-  {
-    id: 1,
-    icon: "💧",
-    title: "Brush your teeth",
-    hour: "07:35",
-    done: true,
-    color: "#E6F0FA", // light blue
-  },
-  {
-    id: 2,
-    icon: "💊",
-    title: "Albuterol Pill",
-    hour: "20:00",
-    done: false,
-    color: "#FFF6CC", // light yellow
-  },
-  {
-    id: 3,
-    icon: "🍴",
-    title: "Eat some fruit",
-    hour: "12:30",
-    done: false,
-    color: "#D6F5D6", // light green
-  },
-  {
-    id: 4,
-    icon: "💧",
-    title: "Take a shower",
-    hour: "07:10",
-    done: true,
-    color: "#E6F0FA", // light blue
-  },
-];
+import {
+  collection,
+  getDocs,
+  query,
+  where,
+  addDoc,
+  updateDoc,
+} from "firebase/firestore";
+import { db } from "../firebase";
 
 const isSameDay = (date1, date2) => {
   return (
@@ -82,29 +57,139 @@ const getMonthsInYear = (year) => {
 };
 
 export default function HomeScreen({ navigation }) {
-  const [listState, setListState] = useState(list);
+  const [habits, setHabits] = useState([]);
+  const [monthProgress, setMonthProgress] = useState([]);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showMonthSelector, setShowMonthSelector] = useState(false);
   const [filter, setFilter] = useState("All"); // Nuevo estado para el filtro
 
-  // Cambia el estado de done para el item con el id dado
-  const toggleDone = (id) => {
-    setListState((prevList) =>
-      prevList.map((item) =>
-        item.id === id ? { ...item, done: !item.done } : item
-      )
-    );
+  useEffect(() => {
+    const loadMonthData = async () => {
+      const year = selectedDate.getFullYear();
+      const month = selectedDate.getMonth();
+      const startOfMonth = new Date(year, month, 1).toISOString().split("T")[0];
+      const endOfMonth = new Date(year, month + 1, 0)
+        .toISOString()
+        .split("T")[0];
+
+      const monthProgress = await getDocs(
+        query(
+          collection(db, "habit_progress"),
+          where("date", ">=", startOfMonth),
+          where("date", "<=", endOfMonth)
+        )
+      );
+
+      setMonthProgress(monthProgress.docs.map((doc) => doc.data()));
+    };
+
+    loadMonthData();
+  }, [selectedDate.getMonth(), selectedDate.getFullYear()]);
+
+  useEffect(() => {
+    const fetchHabits = async () => {
+      const habitsSnapshot = await getDocs(collection(db, "habits"));
+      const habitsList = habitsSnapshot.docs.map((doc) => ({
+        id: doc.id, // ✅ Incluir el ID del documento
+        ...doc.data(),
+      }));
+      setHabits(habitsList);
+    };
+    fetchHabits();
+  }, []);
+
+  // Obtener progreso del día seleccionado
+  const getTodayProgress = () => {
+    const todayString = selectedDate.toISOString().split("T")[0];
+    return monthProgress.filter((progress) => progress.date === todayString);
+  };
+
+  // Combinar hábitos con su progreso del día
+  const getHabitsWithProgress = () => {
+    const todayProgress = getTodayProgress();
+    return habits.map((habit) => {
+      const progress = todayProgress.find((p) => p.habitId === habit.id);
+      return {
+        ...habit,
+        done: progress ? progress.done : false,
+        completedAt: progress?.completedAt || null,
+      };
+    });
+  };
+
+  const markHabitAsCompleted = async (
+    habitId,
+    userId,
+    source = "manual",
+    deviceData = null
+  ) => {
+    const today = selectedDate.toISOString().split("T")[0];
+
+    try {
+      // 1. Buscar si ya existe progreso para hoy
+      const progressQuery = query(
+        collection(db, "habit_progress"),
+        where("habitId", "==", habitId),
+        where("date", "==", today)
+      );
+
+      const existingProgress = await getDocs(progressQuery);
+
+      if (existingProgress.empty) {
+        // 2. No existe → Crear nuevo registro
+        const newProgress = {
+          habitId,
+          date: today,
+          done: true,
+          completedAt: new Date(),
+          method: source,
+          deviceData: deviceData || null,
+        };
+        await addDoc(collection(db, "habit_progress"), newProgress);
+
+        // 3. Actualizar estado local inmediatamente
+        setMonthProgress((prev) => [...prev, newProgress]);
+      } else {
+        // 4. Ya existe → Actualizar (toggle)
+        const progressDoc = existingProgress.docs[0];
+        const currentData = progressDoc.data();
+        const newDoneState = !currentData.done;
+
+        await updateDoc(progressDoc.ref, {
+          done: newDoneState,
+          completedAt: new Date(),
+          method: source,
+          deviceData: deviceData || currentData.deviceData,
+        });
+
+        // 5. Actualizar estado local inmediatamente
+        setMonthProgress((prev) =>
+          prev.map((progress) =>
+            progress.habitId === habitId && progress.date === today
+              ? { ...progress, done: newDoneState, completedAt: new Date() }
+              : progress
+          )
+        );
+      }
+    } catch (error) {
+      console.error("Error updating habit progress:", error);
+    }
+  };
+
+  const handleManualToggle = async (habitId) => {
+    await markHabitAsCompleted(habitId, "manual");
   };
 
   // Función para filtrar la lista según el filtro seleccionado
   const getFilteredList = () => {
+    const habitsWithProgress = getHabitsWithProgress();
     switch (filter) {
       case "Done":
-        return listState.filter((item) => item.done === true);
+        return habitsWithProgress.filter((item) => item.done === true);
       case "Pending":
-        return listState.filter((item) => item.done === false);
+        return habitsWithProgress.filter((item) => item.done === false);
       default:
-        return listState;
+        return habitsWithProgress;
     }
   };
 
@@ -309,9 +394,44 @@ export default function HomeScreen({ navigation }) {
         <FlatList
           style={styles.list}
           contentContainerStyle={styles.listContent}
-          data={getFilteredList()}
+          data={
+            // Filtrar solo los hábitos programados para el día seleccionado
+            getFilteredList()
+              .filter((habit) => {
+                // Determinar el día de la semana del selectedDate
+                const weekDay = selectedDate.toLocaleDateString("en-US", {
+                  weekday: "short",
+                });
+                // Si el hábito tiene días definidos, verificar si el día seleccionado está incluido
+                if (habit.days && Array.isArray(habit.days)) {
+                  return habit.days.includes(weekDay);
+                }
+                // Si no tiene días definidos, mostrarlo igual (por compatibilidad)
+                return true;
+              })
+              .map((habit) => {
+                // Buscar si el hábito está marcado como completado en el día seleccionado en monthProgress
+                const selectedDateStr = selectedDate
+                  .toISOString()
+                  .split("T")[0];
+                const progress = monthProgress.find(
+                  (p) =>
+                    p.habitId === habit.id &&
+                    p.date === selectedDateStr &&
+                    p.done === true
+                );
+                // Retornar el hábito con la propiedad done actualizada según habit_progress
+                return {
+                  ...habit,
+                  done: !!progress,
+                };
+              })
+          }
           renderItem={({ item }) => (
-            <Item item={item} onToggleDone={() => toggleDone(item.id)} />
+            <Item
+              item={item}
+              onToggleDone={() => handleManualToggle(item.id)}
+            />
           )}
           keyExtractor={(item) => item.id.toString()}
         />
@@ -321,12 +441,30 @@ export default function HomeScreen({ navigation }) {
 }
 
 function Item({ item, onToggleDone }) {
+  // Mapear los tipos a colores e iconos
+  const getTypeStyle = (type) => {
+    switch (type) {
+      case "higiene":
+        return { color: "#BFE3FA", icon: "💧" };
+      case "salud":
+        return { color: "#FFF6CC", icon: "💊" };
+      case "nutricion":
+        return { color: "#D6F5D6", icon: "🍴" };
+      default:
+        return { color: "#E6F0FA", icon: "📝" };
+    }
+  };
+
+  console.log(item);
+
+  const typeStyle = getTypeStyle(item.type);
+
   return (
-    <View style={[styles.item, { backgroundColor: item.color }]}>
-      <Text style={styles.icon}>{item.icon}</Text>
+    <View style={[styles.item, { backgroundColor: typeStyle.color }]}>
+      <Text style={styles.icon}>{typeStyle.icon}</Text>
       <View style={styles.itemContent}>
-        <Text style={styles.itemTitle}>{item.title}</Text>
-        <Text style={styles.hour}>{item.hour}</Text>
+        <Text style={styles.itemTitle}>{item.name}</Text>
+        <Text style={styles.hour}>{item.time}</Text>
       </View>
       <View style={styles.done}>
         <TouchableOpacity onPress={onToggleDone}>
@@ -345,13 +483,13 @@ function Item({ item, onToggleDone }) {
               styles.doneText,
             ]}
           >
-            {item.done && (
+            {item.done ? (
               <Text
                 style={{ fontSize: 16, color: "black", fontWeight: "bold" }}
               >
                 ✓
               </Text>
-            )}
+            ) : null}
           </View>
         </TouchableOpacity>
       </View>

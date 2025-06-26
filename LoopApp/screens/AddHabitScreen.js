@@ -9,7 +9,9 @@ import {
   ScrollView,
   Platform,
   Modal,
+  Alert,
 } from "react-native";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import { Ionicons } from "@expo/vector-icons";
 import { db } from "../firebase";
 import { collection, addDoc } from "firebase/firestore";
@@ -69,20 +71,37 @@ export default function AddHabitScreen({ route, navigation }) {
     );
   };
 
+  // Cambia el tiempo y cierra el picker
   const handleTimeChange = (event, selectedDate) => {
+    if (event.type === "set" && selectedDate) {
+      setTime(selectedDate);
+    }
     setShowTimePicker(false);
-    if (selectedDate) setTime(selectedDate);
   };
 
   const handleAdd = async () => {
+    if (!name || !description || !selectedDays.length || !time) {
+      Alert.alert("Please fill all fields");
+      return;
+    }
+
     try {
       await addDoc(collection(db, "habits"), {
         name,
         description,
         type: habitType,
+        days: selectedDays,
+        time: time.toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: false,
+        }),
         createdAt: new Date(),
       });
-      console.log("Habit added successfully");
+
+      navigation.navigate("MainTabs", {
+        screen: "Home",
+      });
     } catch (error) {
       console.error("Error adding habit: ", error);
       // Aquí podrías mostrar un mensaje de error al usuario
@@ -191,6 +210,7 @@ export default function AddHabitScreen({ route, navigation }) {
               >
                 <Text
                   style={[
+                    selectedDays.includes(day.key) && { color: "#222" },
                     styles.dayButtonText,
                     selectedDays.includes(day.key) &&
                       styles.dayButtonTextSelected,
@@ -203,16 +223,47 @@ export default function AddHabitScreen({ route, navigation }) {
           </View>
         </View>
 
-        {/* Time */}
+        {/* Time Picker estilo iPhone */}
         <View style={styles.sectionBox}>
           <Text style={styles.sectionTitle}>Set a time for your task</Text>
           <TouchableOpacity
-            style={styles.timeButton}
+            style={styles.timeDisplayButton}
             onPress={() => setShowTimePicker(true)}
-            activeOpacity={0.7}
           >
-            <Text style={styles.timeButtonText}>{formatTime(time)}</Text>
+            <Text style={styles.timeDisplayText}>{formatTime(time)}</Text>
           </TouchableOpacity>
+
+          {/* DateTimePicker estilizado en un modal centrado */}
+          <Modal
+            visible={showTimePicker}
+            transparent
+            animationType="fade"
+            onRequestClose={() => setShowTimePicker(false)}
+          >
+            <View style={styles.modalOverlay}>
+              <View style={styles.customTimePickerBox}>
+                <Text style={styles.timePickerLabel}>Select time</Text>
+                <DateTimePicker
+                  value={time}
+                  mode="time"
+                  is24Hour={true}
+                  display={Platform.OS === "ios" ? "spinner" : "default"}
+                  onChange={handleTimeChange}
+                  style={styles.nativeTimePicker}
+                  textColor="#222"
+                  accentColor="#FFD59A"
+                  themeVariant="light"
+                />
+                <TouchableOpacity
+                  style={styles.timePickerDoneButton}
+                  onPress={() => setShowTimePicker(false)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.timePickerDoneText}>Done</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Modal>
         </View>
 
         {/* Add & Delete Buttons */}
@@ -341,6 +392,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+  dayButtonSelected: {
+    backgroundColor: "#FFD59A", // naranja pastel
+  },
+  dayButtonTextSelected: {
+    color: "#222",
+  },
+
   sectionBox: {
     width: "100%",
     backgroundColor: "#fff",
@@ -359,9 +417,7 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
 
-  timeButton: {
-    margin: "auto",
-    width: "50%",
+  timeDisplayButton: {
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: 12,
@@ -369,12 +425,71 @@ const styles = StyleSheet.create({
     borderColor: "rgba(0, 0, 0, 0.1)",
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: "#F5F8FA",
+    marginTop: 8,
+    marginBottom: 8,
   },
 
-  timeButtonText: {
+  timeDisplayText: {
     fontSize: 32,
     color: "#222",
     fontWeight: "500",
+    letterSpacing: 2,
+  },
+
+  // Modal overlay for the picker
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.18)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  customTimePickerBox: {
+    width: 320,
+    backgroundColor: "#fff",
+    borderRadius: 20,
+    padding: 24,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+
+  timePickerLabel: {
+    fontSize: 18,
+    color: "#222",
+    fontWeight: "500",
+    marginBottom: 12,
+  },
+
+  nativeTimePicker: {
+    width: 220,
+    height: 120,
+    backgroundColor: "#fff",
+    marginBottom: 12,
+  },
+
+  timePickerDoneButton: {
+    marginTop: 8,
+    backgroundColor: "#FFD59A",
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 32,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#FFD59A",
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+
+  timePickerDoneText: {
+    fontSize: 20,
+    color: "#222",
+    fontWeight: "600",
+    letterSpacing: 1,
   },
 
   buttonRow: {
