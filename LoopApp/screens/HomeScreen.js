@@ -17,6 +17,7 @@ import {
   updateDoc,
 } from "firebase/firestore";
 import { db } from "../firebase";
+import { useAuth } from "../context/AuthContext";
 
 const isSameDay = (date1, date2) => {
   return (
@@ -57,6 +58,19 @@ const getMonthsInYear = (year) => {
 };
 
 export default function HomeScreen({ navigation }) {
+  const { user, loading } = useAuth();
+
+  // Mientras se obtiene el usuario, podemos renderizar un placeholder
+  if (loading || !user) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <Text>Loading...</Text>
+      </View>
+    );
+  }
+
+  // Ya tenemos usuario seguro aquí
+
   const [habits, setHabits] = useState([]);
   const [monthProgress, setMonthProgress] = useState([]);
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -64,6 +78,8 @@ export default function HomeScreen({ navigation }) {
   const [filter, setFilter] = useState("All"); // Nuevo estado para el filtro
 
   useEffect(() => {
+    if (!user?.uid) return;
+
     const loadMonthData = async () => {
       const year = selectedDate.getFullYear();
       const month = selectedDate.getMonth();
@@ -76,7 +92,8 @@ export default function HomeScreen({ navigation }) {
         query(
           collection(db, "habit_progress"),
           where("date", ">=", startOfMonth),
-          where("date", "<=", endOfMonth)
+          where("date", "<=", endOfMonth),
+          where("userId", "==", user.uid)
         )
       );
 
@@ -88,7 +105,12 @@ export default function HomeScreen({ navigation }) {
 
   useEffect(() => {
     const fetchHabits = async () => {
-      const habitsSnapshot = await getDocs(collection(db, "habits"));
+      if (!user?.uid) return; // Esperar a que el usuario esté disponible
+
+      const habitsSnapshot = await getDocs(
+        query(collection(db, "habits"), where("userId", "==", user.uid))
+      );
+
       const habitsList = habitsSnapshot.docs.map((doc) => ({
         id: doc.id, // ✅ Incluir el ID del documento
         ...doc.data(),
@@ -96,7 +118,7 @@ export default function HomeScreen({ navigation }) {
       setHabits(habitsList);
     };
     fetchHabits();
-  }, []);
+  }, [user]);
 
   // Obtener progreso del día seleccionado
   const getTodayProgress = () => {
@@ -130,7 +152,8 @@ export default function HomeScreen({ navigation }) {
       const progressQuery = query(
         collection(db, "habit_progress"),
         where("habitId", "==", habitId),
-        where("date", "==", today)
+        where("date", "==", today),
+        where("userId", "==", user.uid)
       );
 
       const existingProgress = await getDocs(progressQuery);
@@ -159,6 +182,7 @@ export default function HomeScreen({ navigation }) {
           done: newDoneState,
           completedAt: new Date(),
           method: source,
+
           deviceData: deviceData || currentData.deviceData,
         });
 
@@ -213,7 +237,7 @@ export default function HomeScreen({ navigation }) {
     <View style={{ flex: 1, backgroundColor: "#87CEEB" }}>
       <Text style={styles.screenTitle}>Loop</Text>
       <View style={styles.header}>
-        <Text style={styles.greeting}>Hi, Susana!</Text>
+        <Text style={styles.greeting}>Hi!</Text>
         <TouchableOpacity
           onPress={() => setShowMonthSelector(!showMonthSelector)}
         >
@@ -454,8 +478,6 @@ function Item({ item, onToggleDone }) {
         return { color: "#E6F0FA", icon: "📝" };
     }
   };
-
-  console.log(item);
 
   const typeStyle = getTypeStyle(item.type);
 

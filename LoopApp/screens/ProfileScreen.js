@@ -9,8 +9,15 @@ import {
   ImageBackground,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useAuth } from "../context/AuthContext";
 
 export default function ProfileScreen() {
+  const { logout, user } = useAuth();
+
+  const handleLogout = async () => {
+    await logout();
+  };
+
   return (
     <View style={styles.container}>
       <ImageBackground
@@ -18,21 +25,13 @@ export default function ProfileScreen() {
         style={styles.background}
       />
       {/* Header */}
-      <Text style={styles.greeting}>Hi, Susana !</Text>
+      <Text style={styles.greeting}>Hi, !</Text>
       {/* Profile Avatar */}
       <View style={styles.avatarContainer}>
         <Ionicons name="person-circle-outline" size={140} color="#B3D6F6" />
       </View>
       {/* Username */}
-      <View style={styles.inputWrapper}>
-        <TextInput
-          style={styles.input}
-          placeholder="Username"
-          placeholderTextColor="#B0B0B0"
-          editable={false}
-          value="Username"
-        />
-      </View>
+
       {/* Email */}
       <View style={styles.inputWrapper}>
         <TextInput
@@ -65,7 +64,11 @@ export default function ProfileScreen() {
         />
       </TouchableOpacity>
       {/* Logout */}
-      <TouchableOpacity style={styles.logoutButton} activeOpacity={0.8}>
+      <TouchableOpacity
+        style={styles.logoutButton}
+        activeOpacity={0.8}
+        onPress={handleLogout}
+      >
         <Text style={styles.logoutText}>Logout</Text>
         <Ionicons
           name="log-out-outline"

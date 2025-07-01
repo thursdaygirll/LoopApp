@@ -15,6 +15,7 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import { Ionicons } from "@expo/vector-icons";
 import { db } from "../firebase";
 import { collection, addDoc } from "firebase/firestore";
+import { useAuth } from "../context/AuthContext";
 
 // Puedes cambiar estos datos para hacerlo dinámico según la categoría seleccionada
 const habitTypes = {
@@ -58,7 +59,7 @@ const weekDays = [
 export default function AddHabitScreen({ route, navigation }) {
   const habitType = route?.params?.type;
   const habit = habitTypes[habitType];
-
+  const { user } = useAuth();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [selectedDays, setSelectedDays] = useState(["Mon"]);
@@ -97,11 +98,10 @@ export default function AddHabitScreen({ route, navigation }) {
           hour12: false,
         }),
         createdAt: new Date(),
+        userId: user.uid,
       });
 
-      navigation.navigate("MainTabs", {
-        screen: "Home",
-      });
+      navigation.goBack();
     } catch (error) {
       console.error("Error adding habit: ", error);
       // Aquí podrías mostrar un mensaje de error al usuario

@@ -1,8 +1,8 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
 
-// Your web app's Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyD7cihT769KcAW2TI-6ojfpN_SV9yROkpY",
   authDomain: "loopapp-13b10.firebaseapp.com",
@@ -13,8 +13,17 @@ const firebaseConfig = {
   measurementId: "G-VQ4N4X0HE4",
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const auth = getAuth(app);
 
-export { db };
+export { db, auth };
+
+// El archivo AuthContext.js típicamente va en una carpeta llamada "context" o "contexts" en la raíz del proyecto o dentro de "src".
+// Ejemplo de estructura:
+// - src/
+//   - context/
+//     - AuthContext.js
+// O simplemente:
+// - context/
+//   - AuthContext.js

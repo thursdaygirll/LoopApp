@@ -18,6 +18,8 @@ import SignUpPage from "./screens/SignUpPage";
 import HomeScreen from "./screens/HomeScreen";
 import AddHabitScreen from "./screens/AddHabitScreen";
 import ProfileScreen from "./screens/ProfileScreen";
+import { AuthProvider, useAuth } from "./context/AuthContext";
+import LoadingPage from "./screens/LoadingPage";
 
 // Import other screens as you create them
 
@@ -116,21 +118,36 @@ function MainTabs() {
   );
 }
 
+function AppNavigator() {
+  const { user, loading } = useAuth();
+
+  if (loading) return <LoadingPage />;
+
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      {user ? (
+        // Usuario autenticado
+        <>
+          <Stack.Screen name="MainTabs" component={MainTabs} />
+          <Stack.Screen name="AddHabitScreen" component={AddHabitScreen} />
+        </>
+      ) : (
+        // Usuario NO autenticado
+        <>
+          <Stack.Screen name="Login" component={LoginPage} />
+          <Stack.Screen name="SignUp" component={SignUpPage} />
+        </>
+      )}
+    </Stack.Navigator>
+  );
+}
+
 export default function App() {
   return (
     <NavigationContainer>
-      <Stack.Navigator
-        screenOptions={{ headerShown: false }}
-        initialRouteName="Landing"
-      >
-        <Stack.Screen name="Landing" component={LandingPage} />
-        <Stack.Screen name="Login" component={LoginPage} />
-        <Stack.Screen name="SignUp" component={SignUpPage} />
-        <Stack.Screen name="MainTabs" component={MainTabs} />
-        <Stack.Screen name="AddHabitScreen" component={AddHabitScreen} />
-
-        {/* Add more screens here */}
-      </Stack.Navigator>
+      <AuthProvider>
+        <AppNavigator />
+      </AuthProvider>
     </NavigationContainer>
   );
 }
